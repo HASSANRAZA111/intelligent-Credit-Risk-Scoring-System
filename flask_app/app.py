@@ -21,8 +21,7 @@ from flask import Flask, request, jsonify, render_template
 # ─────────────────────────────────────────────
 # Configuration
 # ─────────────────────────────────────────────
-# BASE_DIR = repo root (one level up from flask_app/)
-# This works correctly both locally and on Render
+# Path resolves relative to this file — works locally AND on Render/Gunicorn
 BASE_DIR     = Path(__file__).resolve().parent.parent
 ARTIFACT_DIR = Path(os.environ.get("ARTIFACT_DIR", str(BASE_DIR / "model_artifacts")))
 
@@ -32,16 +31,14 @@ app = Flask(__name__)
 # ─────────────────────────────────────────────
 # Helper Functions (mirror notebook logic)
 # ─────────────────────────────────────────────
-def prob_to_credit_score(probability: np.ndarray,
-                         min_score: int = 300,
-                         max_score: int = 850) -> np.ndarray:
+def prob_to_credit_score(probability, min_score=300, max_score=850):
     """Convert default probability → FICO-style score (300–850)."""
     return np.round(
         min_score + (1 - probability) * (max_score - min_score)
     ).astype(int)
 
 
-def assign_risk_band(score: int):
+def assign_risk_band(score):
     """Return (band_label, color, recommendation, interest_rate) for a score."""
     if score >= 750:
         return "Excellent", "#27ae60", "APPROVE — Prime Rate", "8–10%"
@@ -78,18 +75,17 @@ class CreditRiskScorer:
         self.threshold        = metadata.get("optimal_threshold", 0.15)
 
     @classmethod
-    def load(cls, artifact_dir: Path) -> "CreditRiskScorer":
+    def load(cls, artifact_dir):
         artifact_dir = Path(artifact_dir)
 
-        print(f"[CreditRiskScorer] Loading from: {artifact_dir.resolve()}")
-        print(f"[CreditRiskScorer] Directory exists: {artifact_dir.exists()}")
+        print(f"[CreditRiskScorer] Loading from : {artifact_dir.resolve()}")
+        print(f"[CreditRiskScorer] Dir exists   : {artifact_dir.exists()}")
         if artifact_dir.exists():
-            files = list(artifact_dir.iterdir())
-            print(f"[CreditRiskScorer] Files found: {[f.name for f in files]}")
+            print(f"[CreditRiskScorer] Files found  : {[f.name for f in sorted(artifact_dir.iterdir())]}")
 
-        with open(artifact_dir / "feature_list.json")     as f: feature_list    = json.load(f)
-        with open(artifact_dir / "model_metadata.json")   as f: metadata        = json.load(f)
-        with open(artifact_dir / "ensemble_weights.json") as f: ensemble_weights = json.load(f)
+        with open(artifact_dir / "feature_list.json")     as f: feature_list     = json.load(f)
+        with open(artifact_dir / "model_metadata.json")   as f: metadata         = json.load(f)
+        with open(artifact_dir / "ensemble_weights.json") as f: ensemble_weights  = json.load(f)
 
         imputer      = joblib.load(artifact_dir / "imputer.pkl")
         meta_learner = joblib.load(artifact_dir / "meta_learner.pkl")
@@ -104,11 +100,11 @@ class CreditRiskScorer:
             for i in range(n_folds)
         ]
 
-        print(f"[CreditRiskScorer] Loaded — {n_folds}× LGB + {n_folds}× XGB + meta-learner")
+        print(f"[CreditRiskScorer] Loaded — {n_folds}x LGB + {n_folds}x XGB + meta-learner")
         return cls(lgb_models, xgb_models, meta_learner,
                    imputer, feature_list, ensemble_weights, metadata)
 
-    def predict_proba(self, X: pd.DataFrame) -> np.ndarray:
+    def predict_proba(self, X):
         X_aligned = X.reindex(columns=self.feature_list, fill_value=np.nan)
         X_imp     = pd.DataFrame(
             self.imputer.transform(X_aligned), columns=self.feature_list
@@ -124,7 +120,7 @@ class CreditRiskScorer:
         ranked  = [rankdata(p) / len(p) for p in [lgb_preds, xgb_preds, stack_preds]]
         return sum(wt * r for wt, r in zip(weights, ranked))
 
-    def score_report(self, X: pd.DataFrame) -> list[dict]:
+    def score_report(self, X):
         proba  = self.predict_proba(X)
         scores = prob_to_credit_score(proba)
         results = []
@@ -145,19 +141,22 @@ class CreditRiskScorer:
 
 
 # ─────────────────────────────────────────────
-# Load scorer once at startup
+# Load scorer at MODULE LEVEL
 # ─────────────────────────────────────────────
-scorer: CreditRiskScorer | None = None
+# IMPORTANT: Must be here — NOT inside if __name__ == "__main__"
+# Gunicorn imports this module directly and never runs __main__
+# Putting load here ensures models load for every Gunicorn worker
+# ─────────────────────────────────────────────
+scorer = None
 
-def load_scorer():
-    global scorer
-    try:
-        print(f"[app] ARTIFACT_DIR = {ARTIFACT_DIR.resolve()}")
-        scorer = CreditRiskScorer.load(ARTIFACT_DIR)
-        print("[app] CreditRiskScorer ready.")
-    except Exception as e:
-        print(f"[app] WARNING: Could not load scorer — {e}")
-        scorer = None
+print(f"[app] ARTIFACT_DIR = {ARTIFACT_DIR.resolve()}")
+
+try:
+    scorer = CreditRiskScorer.load(ARTIFACT_DIR)
+    print("[app] CreditRiskScorer ready.")
+except Exception as e:
+    print(f"[app] WARNING: Could not load scorer — {e}")
+    scorer = None
 
 
 # ─────────────────────────────────────────────
@@ -215,8 +214,7 @@ def predict():
 
 
 # ─────────────────────────────────────────────
-# Entry Point
+# Entry Point (local development only)
 # ─────────────────────────────────────────────
 if __name__ == "__main__":
-    load_scorer()
     app.run(debug=True, host="0.0.0.0", port=5000)
