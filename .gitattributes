@@ -1,2 +1,0 @@
-model_artifacts/*.pkl filter=lfs diff=lfs merge=lfs -text
-model_artifacts/*.txt filter=lfs diff=lfs merge=lfs -text
