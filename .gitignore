@@ -18,12 +18,8 @@ env/
 # Jupyter
 .ipynb_checkpoints/
 
-# Raw Kaggle data (large — do not commit)
+# Raw Kaggle data (large)
 home-credit-default-risk/
-
-# Model artifact binaries (large — use Git LFS)
-model_artifacts/*.pkl
-model_artifacts/*.txt
 
 # OOF predictions (large intermediate file)
 model_artifacts/oof_predictions.csv
