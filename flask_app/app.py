@@ -9,6 +9,7 @@ Endpoints:
 
 import json
 import os
+import gc
 import numpy as np
 import pandas as pd
 import joblib
@@ -21,15 +22,18 @@ from flask import Flask, request, jsonify, render_template
 # ─────────────────────────────────────────────
 # Configuration
 # ─────────────────────────────────────────────
-# Path resolves relative to this file — works locally AND on Render/Gunicorn
+# Repo root is /opt/render/project/src/ when using flask_app.app:app
 BASE_DIR     = Path(__file__).resolve().parent.parent
 ARTIFACT_DIR = Path(os.environ.get("ARTIFACT_DIR", str(BASE_DIR / "model_artifacts")))
+
+# On free Render (512 MB RAM), load 3 folds instead of 5 to stay within memory
+MAX_FOLDS = int(os.environ.get("MAX_FOLDS", "3"))
 
 app = Flask(__name__)
 
 
 # ─────────────────────────────────────────────
-# Helper Functions (mirror notebook logic)
+# Helper Functions
 # ─────────────────────────────────────────────
 def prob_to_credit_score(probability, min_score=300, max_score=850):
     """Convert default probability → FICO-style score (300–850)."""
@@ -55,7 +59,7 @@ def assign_risk_band(score):
 
 
 # ─────────────────────────────────────────────
-# CreditRiskScorer (production class)
+# CreditRiskScorer
 # ─────────────────────────────────────────────
 class CreditRiskScorer:
     """
@@ -75,7 +79,7 @@ class CreditRiskScorer:
         self.threshold        = metadata.get("optimal_threshold", 0.15)
 
     @classmethod
-    def load(cls, artifact_dir):
+    def load(cls, artifact_dir, max_folds=3):
         artifact_dir = Path(artifact_dir)
 
         print(f"[CreditRiskScorer] Loading from : {artifact_dir.resolve()}")
@@ -89,7 +93,9 @@ class CreditRiskScorer:
 
         imputer      = joblib.load(artifact_dir / "imputer.pkl")
         meta_learner = joblib.load(artifact_dir / "meta_learner.pkl")
-        n_folds      = metadata["n_folds"]
+
+        # Load only max_folds to stay within free-tier RAM (512 MB)
+        n_folds = min(max_folds, metadata["n_folds"])
 
         lgb_models = [
             lgb.Booster(model_file=str(artifact_dir / f"lgbm_fold_{i+1}.txt"))
@@ -99,6 +105,9 @@ class CreditRiskScorer:
             joblib.load(artifact_dir / f"xgb_fold_{i+1}.pkl")
             for i in range(n_folds)
         ]
+
+        # Free memory immediately after loading
+        gc.collect()
 
         print(f"[CreditRiskScorer] Loaded — {n_folds}x LGB + {n_folds}x XGB + meta-learner")
         return cls(lgb_models, xgb_models, meta_learner,
@@ -142,17 +151,15 @@ class CreditRiskScorer:
 
 # ─────────────────────────────────────────────
 # Load scorer at MODULE LEVEL
-# ─────────────────────────────────────────────
-# IMPORTANT: Must be here — NOT inside if __name__ == "__main__"
-# Gunicorn imports this module directly and never runs __main__
-# Putting load here ensures models load for every Gunicorn worker
+# Runs when Gunicorn imports this module — NOT inside __main__
 # ─────────────────────────────────────────────
 scorer = None
 
 print(f"[app] ARTIFACT_DIR = {ARTIFACT_DIR.resolve()}")
+print(f"[app] MAX_FOLDS    = {MAX_FOLDS}")
 
 try:
-    scorer = CreditRiskScorer.load(ARTIFACT_DIR)
+    scorer = CreditRiskScorer.load(ARTIFACT_DIR, max_folds=MAX_FOLDS)
     print("[app] CreditRiskScorer ready.")
 except Exception as e:
     print(f"[app] WARNING: Could not load scorer — {e}")
@@ -164,33 +171,21 @@ except Exception as e:
 # ─────────────────────────────────────────────
 @app.route("/")
 def index():
-    """Serve the prediction web UI."""
     return render_template("index.html")
 
 
 @app.route("/health")
 def health():
-    """Health check endpoint — useful for Render / cloud monitoring."""
     return jsonify({
         "status" : "ok",
         "model"  : "loaded" if scorer else "not_loaded",
         "version": scorer.metadata.get("model_type", "N/A") if scorer else "N/A",
+        "folds"  : len(scorer.lgb_models) if scorer else 0,
     })
 
 
 @app.route("/predict", methods=["POST"])
 def predict():
-    """
-    Accept a JSON body with applicant feature values and return a credit risk report.
-
-    Example request body:
-    {
-        "AMT_CREDIT": 500000,
-        "AMT_INCOME_TOTAL": 150000,
-        "EXT_SOURCE_2": 0.65,
-        ...
-    }
-    """
     if scorer is None:
         return jsonify({"error": "Model not loaded. Check model_artifacts/ directory."}), 503
 
@@ -210,11 +205,12 @@ def predict():
         })
 
     except Exception as e:
+        print(f"[predict] ERROR: {e}")
         return jsonify({"error": str(e)}), 500
 
 
 # ─────────────────────────────────────────────
-# Entry Point (local development only)
+# Entry Point (local only — Gunicorn ignores this)
 # ─────────────────────────────────────────────
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=5000)
