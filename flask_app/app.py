@@ -21,7 +21,10 @@ from flask import Flask, request, jsonify, render_template
 # ─────────────────────────────────────────────
 # Configuration
 # ─────────────────────────────────────────────
-ARTIFACT_DIR = Path(os.environ.get("ARTIFACT_DIR", "../model_artifacts"))
+# BASE_DIR = repo root (one level up from flask_app/)
+# This works correctly both locally and on Render
+BASE_DIR     = Path(__file__).resolve().parent.parent
+ARTIFACT_DIR = Path(os.environ.get("ARTIFACT_DIR", str(BASE_DIR / "model_artifacts")))
 
 app = Flask(__name__)
 
@@ -76,9 +79,17 @@ class CreditRiskScorer:
 
     @classmethod
     def load(cls, artifact_dir: Path) -> "CreditRiskScorer":
-        with open(artifact_dir / "feature_list.json")     as f: feature_list     = json.load(f)
-        with open(artifact_dir / "model_metadata.json")   as f: metadata          = json.load(f)
-        with open(artifact_dir / "ensemble_weights.json") as f: ensemble_weights  = json.load(f)
+        artifact_dir = Path(artifact_dir)
+
+        print(f"[CreditRiskScorer] Loading from: {artifact_dir.resolve()}")
+        print(f"[CreditRiskScorer] Directory exists: {artifact_dir.exists()}")
+        if artifact_dir.exists():
+            files = list(artifact_dir.iterdir())
+            print(f"[CreditRiskScorer] Files found: {[f.name for f in files]}")
+
+        with open(artifact_dir / "feature_list.json")     as f: feature_list    = json.load(f)
+        with open(artifact_dir / "model_metadata.json")   as f: metadata        = json.load(f)
+        with open(artifact_dir / "ensemble_weights.json") as f: ensemble_weights = json.load(f)
 
         imputer      = joblib.load(artifact_dir / "imputer.pkl")
         meta_learner = joblib.load(artifact_dir / "meta_learner.pkl")
@@ -141,6 +152,7 @@ scorer: CreditRiskScorer | None = None
 def load_scorer():
     global scorer
     try:
+        print(f"[app] ARTIFACT_DIR = {ARTIFACT_DIR.resolve()}")
         scorer = CreditRiskScorer.load(ARTIFACT_DIR)
         print("[app] CreditRiskScorer ready.")
     except Exception as e:
@@ -188,14 +200,13 @@ def predict():
         if not data:
             return jsonify({"error": "Empty or invalid JSON body."}), 400
 
-        # Support single dict or list of dicts
         records = data if isinstance(data, list) else [data]
         df      = pd.DataFrame(records)
 
         report = scorer.score_report(df)
         return jsonify({
-            "success"    : True,
-            "predictions": report,
+            "success"     : True,
+            "predictions" : report,
             "n_applicants": len(report),
         })
 
