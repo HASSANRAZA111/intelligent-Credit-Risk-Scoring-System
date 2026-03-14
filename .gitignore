@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+venv/
+env/
+.env/
+.venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Raw Kaggle data (large — do not commit)
+home-credit-default-risk/
+
+# Model artifact binaries (large — use Git LFS)
+model_artifacts/*.pkl
+model_artifacts/*.txt
+
+# OOF predictions (large intermediate file)
+model_artifacts/oof_predictions.csv
+
+# Keep these tracked (small, important outputs)
+!submission.csv
+!model_artifacts/feature_list.json
+!model_artifacts/ensemble_weights.json
+!model_artifacts/model_metadata.json
+
+# Environment variables
+.env
+*.env
+
+# OS
+.DS_Store
+Thumbs.db

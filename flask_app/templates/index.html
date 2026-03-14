@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Intelligent Credit Risk Scoring System</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+
+<!-- ── Header ────────────────────────────────────────────── -->
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <span class="logo-icon">⚡</span>
+      <div>
+        <h1>Credit Risk Scoring System</h1>
+        <p>Enterprise ML Pipeline · LightGBM + XGBoost + Stacking Ensemble</p>
+      </div>
+    </div>
+    <span id="model-badge" class="badge badge-loading">Checking model…</span>
+  </div>
+</header>
+
+<!-- ── Main ──────────────────────────────────────────────── -->
+<main>
+
+  <!-- Info bar -->
+  <div class="info-bar">
+    <div class="info-card">
+      <span class="info-icon">🎯</span>
+      <div><strong>Primary Metric</strong><br>ROC-AUC · Target 0.800+</div>
+    </div>
+    <div class="info-card">
+      <span class="info-icon">🏦</span>
+      <div><strong>Score Range</strong><br>FICO-style 300 – 850</div>
+    </div>
+    <div class="info-card">
+      <span class="info-icon">🔍</span>
+      <div><strong>Explainability</strong><br>SHAP · KS · Gini</div>
+    </div>
+    <div class="info-card">
+      <span class="info-icon">📊</span>
+      <div><strong>Training Data</strong><br>307K applicants · 7 tables</div>
+    </div>
+  </div>
+
+  <!-- Two-column layout -->
+  <div class="layout">
+
+    <!-- ── Input Panel ──────────────────────────────────── -->
+    <section class="panel">
+      <h2>Applicant Features</h2>
+      <p class="panel-sub">Enter core applicant details. Missing fields are imputed automatically.</p>
+
+      <div class="form-grid">
+
+        <div class="form-group">
+          <label>Credit Amount (AMT_CREDIT)</label>
+          <input type="number" id="AMT_CREDIT" placeholder="e.g. 500000" />
+        </div>
+
+        <div class="form-group">
+          <label>Annual Income (AMT_INCOME_TOTAL)</label>
+          <input type="number" id="AMT_INCOME_TOTAL" placeholder="e.g. 150000" />
+        </div>
+
+        <div class="form-group">
+          <label>Annuity Amount (AMT_ANNUITY)</label>
+          <input type="number" id="AMT_ANNUITY" placeholder="e.g. 25000" />
+        </div>
+
+        <div class="form-group">
+          <label>Goods Price (AMT_GOODS_PRICE)</label>
+          <input type="number" id="AMT_GOODS_PRICE" placeholder="e.g. 450000" />
+        </div>
+
+        <div class="form-group">
+          <label>External Score 1 (EXT_SOURCE_1)</label>
+          <input type="number" id="EXT_SOURCE_1" placeholder="0.0 – 1.0" step="0.01" />
+        </div>
+
+        <div class="form-group">
+          <label>External Score 2 (EXT_SOURCE_2)</label>
+          <input type="number" id="EXT_SOURCE_2" placeholder="0.0 – 1.0" step="0.01" />
+        </div>
+
+        <div class="form-group">
+          <label>External Score 3 (EXT_SOURCE_3)</label>
+          <input type="number" id="EXT_SOURCE_3" placeholder="0.0 – 1.0" step="0.01" />
+        </div>
+
+        <div class="form-group">
+          <label>Days Birth (negative integer)</label>
+          <input type="number" id="DAYS_BIRTH" placeholder="e.g. -12000" />
+        </div>
+
+        <div class="form-group">
+          <label>Days Employed (negative integer)</label>
+          <input type="number" id="DAYS_EMPLOYED" placeholder="e.g. -3000" />
+        </div>
+
+        <div class="form-group">
+          <label>Days ID Published</label>
+          <input type="number" id="DAYS_ID_PUBLISH" placeholder="e.g. -1500" />
+        </div>
+
+        <div class="form-group">
+          <label>Region Population Relative</label>
+          <input type="number" id="REGION_POPULATION_RELATIVE" placeholder="e.g. 0.035" step="0.001" />
+        </div>
+
+        <div class="form-group">
+          <label>Own Car Age</label>
+          <input type="number" id="OWN_CAR_AGE" placeholder="e.g. 5" />
+        </div>
+
+      </div>
+
+      <!-- JSON textarea for power users -->
+      <details class="advanced">
+        <summary>Advanced: Paste raw JSON features</summary>
+        <textarea id="raw-json" placeholder='{"AMT_CREDIT": 500000, "EXT_SOURCE_2": 0.65, ...}'></textarea>
+      </details>
+
+      <button id="predict-btn" onclick="runPrediction()">
+        <span id="btn-text">Score Applicant</span>
+        <span id="btn-spinner" class="spinner hidden"></span>
+      </button>
+
+    </section>
+
+    <!-- ── Result Panel ─────────────────────────────────── -->
+    <section class="panel" id="result-panel">
+      <h2>Credit Risk Report</h2>
+      <p class="panel-sub">The ensemble model output will appear here.</p>
+
+      <div id="result-content">
+        <div class="placeholder">
+          <span class="placeholder-icon">📋</span>
+          <p>Submit applicant data to generate a credit risk report.</p>
+        </div>
+      </div>
+
+    </section>
+
+  </div><!-- /layout -->
+
+  <!-- ── Risk Band Reference ──────────────────────────────── -->
+  <section class="risk-table-section">
+    <h2>Risk Band Reference</h2>
+    <div class="risk-bands">
+      <div class="band" style="--band-color:#27ae60">
+        <div class="band-score">750 – 850</div>
+        <div class="band-label">Excellent</div>
+        <div class="band-rate">8 – 10%</div>
+        <div class="band-action">APPROVE</div>
+      </div>
+      <div class="band" style="--band-color:#2ecc71">
+        <div class="band-score">700 – 749</div>
+        <div class="band-label">Good</div>
+        <div class="band-rate">11 – 14%</div>
+        <div class="band-action">APPROVE</div>
+      </div>
+      <div class="band" style="--band-color:#f39c12">
+        <div class="band-score">650 – 699</div>
+        <div class="band-label">Fair</div>
+        <div class="band-rate">15 – 19%</div>
+        <div class="band-action">APPROVE</div>
+      </div>
+      <div class="band" style="--band-color:#e67e22">
+        <div class="band-score">600 – 649</div>
+        <div class="band-label">Poor</div>
+        <div class="band-rate">20 – 25%</div>
+        <div class="band-action">CONDITIONAL</div>
+      </div>
+      <div class="band" style="--band-color:#e74c3c">
+        <div class="band-score">550 – 599</div>
+        <div class="band-label">Very Poor</div>
+        <div class="band-rate">N/A</div>
+        <div class="band-action">DECLINE</div>
+      </div>
+      <div class="band" style="--band-color:#8e44ad">
+        <div class="band-score">300 – 549</div>
+        <div class="band-label">High Risk</div>
+        <div class="band-rate">N/A</div>
+        <div class="band-action">DECLINE</div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ── Footer ────────────────────────────────────────────── -->
+<footer>
+  <p>Intelligent Credit Risk Scoring System · Enterprise ML Pipeline · Home Credit Default Risk</p>
+</footer>
+
+<!-- ── Script ────────────────────────────────────────────── -->
+<script>
+  // Health check on load
+  fetch("/health")
+    .then(r => r.json())
+    .then(d => {
+      const badge = document.getElementById("model-badge");
+      if (d.model === "loaded") {
+        badge.textContent = "✓ Model Loaded";
+        badge.className = "badge badge-ok";
+      } else {
+        badge.textContent = "✗ Model Not Loaded";
+        badge.className = "badge badge-error";
+      }
+    })
+    .catch(() => {
+      document.getElementById("model-badge").textContent = "✗ Unreachable";
+    });
+
+  function collectFeatures() {
+    // Check raw JSON first
+    const raw = document.getElementById("raw-json").value.trim();
+    if (raw) {
+      try { return JSON.parse(raw); }
+      catch(e) { alert("Invalid JSON in advanced field."); return null; }
+    }
+    // Otherwise collect from form inputs
+    const fields = [
+      "AMT_CREDIT","AMT_INCOME_TOTAL","AMT_ANNUITY","AMT_GOODS_PRICE",
+      "EXT_SOURCE_1","EXT_SOURCE_2","EXT_SOURCE_3",
+      "DAYS_BIRTH","DAYS_EMPLOYED","DAYS_ID_PUBLISH",
+      "REGION_POPULATION_RELATIVE","OWN_CAR_AGE"
+    ];
+    const obj = {};
+    fields.forEach(f => {
+      const v = document.getElementById(f).value;
+      if (v !== "") obj[f] = parseFloat(v);
+    });
+    return obj;
+  }
+
+  function runPrediction() {
+    const features = collectFeatures();
+    if (!features) return;
+
+    const btn     = document.getElementById("predict-btn");
+    const spinner = document.getElementById("btn-spinner");
+    const btnText = document.getElementById("btn-text");
+    btn.disabled    = true;
+    spinner.classList.remove("hidden");
+    btnText.textContent = "Scoring…";
+
+    fetch("/predict", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(features)
+    })
+    .then(r => r.json())
+    .then(data => {
+      btn.disabled = false;
+      spinner.classList.add("hidden");
+      btnText.textContent = "Score Applicant";
+      if (data.error) {
+        showError(data.error);
+      } else {
+        renderReport(data.predictions[0]);
+      }
+    })
+    .catch(err => {
+      btn.disabled = false;
+      spinner.classList.add("hidden");
+      btnText.textContent = "Score Applicant";
+      showError("Network error: " + err.message);
+    });
+  }
+
+  function renderReport(r) {
+    const decisionClass = r.decision === "APPROVE" ? "decision-approve" : "decision-reject";
+    const html = `
+      <div class="report">
+
+        <div class="report-top">
+          <div class="credit-score-circle" style="border-color:${r.band_color}">
+            <div class="score-number" style="color:${r.band_color}">${r.credit_score}</div>
+            <div class="score-label">Credit Score</div>
+          </div>
+          <div class="decision-block">
+            <div class="decision-tag ${decisionClass}">${r.decision}</div>
+            <div class="risk-band-tag" style="background:${r.band_color}">${r.risk_band}</div>
+          </div>
+        </div>
+
+        <div class="report-grid">
+          <div class="metric">
+            <div class="metric-label">Default Probability</div>
+            <div class="metric-value">${(r.default_probability * 100).toFixed(2)}%</div>
+            <div class="metric-bar"><div class="metric-fill" style="width:${r.default_probability*100}%;background:${r.band_color}"></div></div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Interest Rate</div>
+            <div class="metric-value">${r.interest_rate}</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">Recommendation</div>
+            <div class="metric-value rec">${r.recommendation}</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">High Risk Flag</div>
+            <div class="metric-value">${r.high_risk_flag ? "🚨 Yes" : "✅ No"}</div>
+          </div>
+        </div>
+
+      </div>`;
+    document.getElementById("result-content").innerHTML = html;
+  }
+
+  function showError(msg) {
+    document.getElementById("result-content").innerHTML =
+      `<div class="error-box">⚠️ ${msg}</div>`;
+  }
+</script>
+
+</body>
+</html>

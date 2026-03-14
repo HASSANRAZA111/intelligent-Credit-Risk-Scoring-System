@@ -1,0 +1,34 @@
+{
+  "model_type": "Rank-Average Ensemble (LightGBM + XGBoost + Stacking)",
+  "n_folds": 5,
+  "oof_auc_lgb_tuned": 0.788262728909431,
+  "oof_auc_xgb": 0.7872175853502695,
+  "oof_auc_stacking": 0.789119435832921,
+  "oof_auc_ensemble": 0.7891447956386213,
+  "n_features": 258,
+  "train_samples": 307511,
+  "optimal_threshold": 0.6598115998272355,
+  "score_range": [
+    300,
+    850
+  ],
+  "risk_bands": {
+    "750\u2013850": "Excellent \u2014 APPROVE (Prime Rate)",
+    "700\u2013749": "Good \u2014 APPROVE (Standard Rate)",
+    "650\u2013699": "Fair \u2014 APPROVE (Higher Rate)",
+    "600\u2013649": "Poor \u2014 CONDITIONAL (Risk Premium)",
+    "550\u2013599": "Very Poor \u2014 DECLINE/COLLATERAL",
+    "300\u2013549": "High Risk \u2014 DECLINE"
+  },
+  "optuna_best_params": {
+    "num_leaves": 114,
+    "max_depth": 8,
+    "learning_rate": 0.015662451066037322,
+    "min_child_samples": 48,
+    "feature_fraction": 0.5063661100560785,
+    "bagging_fraction": 0.8255044162944254,
+    "bagging_freq": 2,
+    "reg_alpha": 0.001238982030327346,
+    "reg_lambda": 9.677111019800295
+  }
+}
