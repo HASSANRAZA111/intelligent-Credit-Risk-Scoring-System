@@ -1,322 +1,409 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Intelligent Credit Risk Scoring System</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
 </head>
 <body>
 
-<!-- ── Header ────────────────────────────────────────────── -->
 <header>
-  <div class="header-inner">
-    <div class="logo">
-      <span class="logo-icon">⚡</span>
+  <div class="hdr">
+    <div class="hdr-brand">
+      <div class="hdr-logo">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
       <div>
-        <h1>Credit Risk Scoring System</h1>
-        <p>Enterprise ML Pipeline · LightGBM + XGBoost + Stacking Ensemble</p>
+        <div class="hdr-name">Credit Risk Scoring System</div>
+        <div class="hdr-sub">Enterprise ML Pipeline &middot; LightGBM + XGBoost + Stacking Ensemble &middot; Kaggle AUC 0.78736</div>
       </div>
     </div>
-    <span id="model-badge" class="badge badge-loading">Checking model…</span>
+    <div class="hdr-actions">
+      <div class="auc-pill">
+        <span class="auc-label">Kaggle LB</span>
+        <span class="auc-val">0.78736</span>
+      </div>
+      <div id="model-status" class="status-pill s-loading">
+        <span class="s-dot" id="sdot"></span>
+        <span id="s-text">Connecting&hellip;</span>
+      </div>
+    </div>
   </div>
 </header>
 
-<!-- ── Main ──────────────────────────────────────────────── -->
+<div class="metrics-bar">
+  <div class="mb-inner">
+    <div class="mb-item"><span class="mb-num">307K</span><span class="mb-lbl">Applicants</span></div>
+    <div class="mb-sep"></div>
+    <div class="mb-item"><span class="mb-num">300+</span><span class="mb-lbl">Features</span></div>
+    <div class="mb-sep"></div>
+    <div class="mb-item"><span class="mb-num">7</span><span class="mb-lbl">Data Tables</span></div>
+    <div class="mb-sep"></div>
+    <div class="mb-item"><span class="mb-num">0.787</span><span class="mb-lbl">ROC-AUC</span></div>
+    <div class="mb-sep"></div>
+    <div class="mb-item"><span class="mb-num">5-Fold</span><span class="mb-lbl">OOF CV</span></div>
+    <div class="mb-sep"></div>
+    <div class="mb-item"><span class="mb-num">50</span><span class="mb-lbl">Optuna Trials</span></div>
+    <div class="mb-sep"></div>
+    <div class="mb-item"><span class="mb-num">SHAP</span><span class="mb-lbl">Explainability</span></div>
+  </div>
+</div>
+
 <main>
 
-  <!-- Info bar -->
-  <div class="info-bar">
-    <div class="info-card">
-      <span class="info-icon">🎯</span>
-      <div><strong>Primary Metric</strong><br>ROC-AUC · Target 0.800+</div>
-    </div>
-    <div class="info-card">
-      <span class="info-icon">🏦</span>
-      <div><strong>Score Range</strong><br>FICO-style 300 – 850</div>
-    </div>
-    <div class="info-card">
-      <span class="info-icon">🔍</span>
-      <div><strong>Explainability</strong><br>SHAP · KS · Gini</div>
-    </div>
-    <div class="info-card">
-      <span class="info-icon">📊</span>
-      <div><strong>Training Data</strong><br>307K applicants · 7 tables</div>
-    </div>
+  <div class="pipeline-row">
+    <span class="pc">Raw Data</span><span class="pa">&rsaquo;</span>
+    <span class="pc">Feature Engineering</span><span class="pa">&rsaquo;</span>
+    <span class="pc">SMOTE</span><span class="pa">&rsaquo;</span>
+    <span class="pc pc-on">LightGBM &middot; XGBoost</span><span class="pa">&rsaquo;</span>
+    <span class="pc">Optuna HPO</span><span class="pa">&rsaquo;</span>
+    <span class="pc">Stacking Ensemble</span><span class="pa">&rsaquo;</span>
+    <span class="pc">FICO Score</span>
   </div>
 
-  <!-- Two-column layout -->
-  <div class="layout">
+  <div class="workspace">
 
-    <!-- ── Input Panel ──────────────────────────────────── -->
-    <section class="panel">
-      <h2>Applicant Features</h2>
-      <p class="panel-sub">Enter core applicant details. Missing fields are imputed automatically.</p>
+    <!-- INPUT -->
+    <section class="card input-card">
+      <div class="card-head">
+        <div class="card-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <div>
+          <h2>Applicant Features</h2>
+          <p>Enter applicant data below. Missing fields are handled by the model natively.</p>
+        </div>
+      </div>
 
-      <div class="form-grid">
+      <div class="fields">
 
-        <div class="form-group">
-          <label>Credit Amount (AMT_CREDIT)</label>
-          <input type="number" id="AMT_CREDIT" placeholder="e.g. 500000" />
+        <div class="field-section-label">Financial Amounts</div>
+        <div class="field-grid">
+          <div class="field">
+            <label><span class="ftag">AMT_CREDIT</span> Credit Amount</label>
+            <input type="number" id="AMT_CREDIT" placeholder="e.g. 500000"/>
+          </div>
+          <div class="field">
+            <label><span class="ftag">AMT_INCOME_TOTAL</span> Annual Income</label>
+            <input type="number" id="AMT_INCOME_TOTAL" placeholder="e.g. 150000"/>
+          </div>
+          <div class="field">
+            <label><span class="ftag">AMT_ANNUITY</span> Loan Annuity</label>
+            <input type="number" id="AMT_ANNUITY" placeholder="e.g. 25000"/>
+          </div>
+          <div class="field">
+            <label><span class="ftag">AMT_GOODS_PRICE</span> Goods Price</label>
+            <input type="number" id="AMT_GOODS_PRICE" placeholder="e.g. 450000"/>
+          </div>
         </div>
 
-        <div class="form-group">
-          <label>Annual Income (AMT_INCOME_TOTAL)</label>
-          <input type="number" id="AMT_INCOME_TOTAL" placeholder="e.g. 150000" />
+        <div class="field-section-label top-predictors">
+          Bureau External Scores
+          <span class="predictor-badge">Top SHAP Predictors</span>
+        </div>
+        <div class="field-grid">
+          <div class="field field-accent">
+            <label><span class="ftag ftag-gold">EXT_SOURCE_1</span> External Score 1</label>
+            <input type="number" id="EXT_SOURCE_1" placeholder="0.00 – 1.00" step="0.01" min="0" max="1"/>
+          </div>
+          <div class="field field-accent">
+            <label><span class="ftag ftag-gold">EXT_SOURCE_2</span> External Score 2</label>
+            <input type="number" id="EXT_SOURCE_2" placeholder="0.00 – 1.00" step="0.01" min="0" max="1"/>
+          </div>
+          <div class="field field-accent">
+            <label><span class="ftag ftag-gold">EXT_SOURCE_3</span> External Score 3</label>
+            <input type="number" id="EXT_SOURCE_3" placeholder="0.00 – 1.00" step="0.01" min="0" max="1"/>
+          </div>
         </div>
 
-        <div class="form-group">
-          <label>Annuity Amount (AMT_ANNUITY)</label>
-          <input type="number" id="AMT_ANNUITY" placeholder="e.g. 25000" />
-        </div>
-
-        <div class="form-group">
-          <label>Goods Price (AMT_GOODS_PRICE)</label>
-          <input type="number" id="AMT_GOODS_PRICE" placeholder="e.g. 450000" />
-        </div>
-
-        <div class="form-group">
-          <label>External Score 1 (EXT_SOURCE_1)</label>
-          <input type="number" id="EXT_SOURCE_1" placeholder="0.0 – 1.0" step="0.01" />
-        </div>
-
-        <div class="form-group">
-          <label>External Score 2 (EXT_SOURCE_2)</label>
-          <input type="number" id="EXT_SOURCE_2" placeholder="0.0 – 1.0" step="0.01" />
-        </div>
-
-        <div class="form-group">
-          <label>External Score 3 (EXT_SOURCE_3)</label>
-          <input type="number" id="EXT_SOURCE_3" placeholder="0.0 – 1.0" step="0.01" />
-        </div>
-
-        <div class="form-group">
-          <label>Days Birth (negative integer)</label>
-          <input type="number" id="DAYS_BIRTH" placeholder="e.g. -12000" />
-        </div>
-
-        <div class="form-group">
-          <label>Days Employed (negative integer)</label>
-          <input type="number" id="DAYS_EMPLOYED" placeholder="e.g. -3000" />
-        </div>
-
-        <div class="form-group">
-          <label>Days ID Published</label>
-          <input type="number" id="DAYS_ID_PUBLISH" placeholder="e.g. -1500" />
-        </div>
-
-        <div class="form-group">
-          <label>Region Population Relative</label>
-          <input type="number" id="REGION_POPULATION_RELATIVE" placeholder="e.g. 0.035" step="0.001" />
-        </div>
-
-        <div class="form-group">
-          <label>Own Car Age</label>
-          <input type="number" id="OWN_CAR_AGE" placeholder="e.g. 5" />
+        <div class="field-section-label">Temporal Features</div>
+        <div class="field-grid">
+          <div class="field">
+            <label><span class="ftag">DAYS_BIRTH</span> Age in Days</label>
+            <input type="number" id="DAYS_BIRTH" placeholder="e.g. -12000"/>
+          </div>
+          <div class="field">
+            <label><span class="ftag">DAYS_EMPLOYED</span> Employment Days</label>
+            <input type="number" id="DAYS_EMPLOYED" placeholder="e.g. -3000"/>
+          </div>
+          <div class="field">
+            <label><span class="ftag">DAYS_ID_PUBLISH</span> ID Publish Days</label>
+            <input type="number" id="DAYS_ID_PUBLISH" placeholder="e.g. -1500"/>
+          </div>
+          <div class="field">
+            <label><span class="ftag">OWN_CAR_AGE</span> Own Car Age</label>
+            <input type="number" id="OWN_CAR_AGE" placeholder="e.g. 5"/>
+          </div>
         </div>
 
       </div>
 
-      <!-- JSON textarea for power users -->
-      <details class="advanced">
-        <summary>Advanced: Paste raw JSON features</summary>
-        <textarea id="raw-json" placeholder='{"AMT_CREDIT": 500000, "EXT_SOURCE_2": 0.65, ...}'></textarea>
+      <details class="adv">
+        <summary>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          Raw JSON payload (advanced)
+        </summary>
+        <textarea id="raw-json" placeholder='{"AMT_CREDIT": 500000, "EXT_SOURCE_2": 0.65, "DAYS_BIRTH": -12000}'></textarea>
       </details>
 
-      <button id="predict-btn" onclick="runPrediction()">
+      <button id="score-btn" onclick="runPrediction()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
         <span id="btn-text">Score Applicant</span>
-        <span id="btn-spinner" class="spinner hidden"></span>
+        <span id="btn-spin" class="spin hidden"></span>
       </button>
-
     </section>
 
-    <!-- ── Result Panel ─────────────────────────────────── -->
-    <section class="panel" id="result-panel">
-      <h2>Credit Risk Report</h2>
-      <p class="panel-sub">The ensemble model output will appear here.</p>
-
-      <div id="result-content">
-        <div class="placeholder">
-          <span class="placeholder-icon">📋</span>
-          <p>Submit applicant data to generate a credit risk report.</p>
+    <!-- OUTPUT -->
+    <section class="card output-card" id="output-card">
+      <div class="card-head">
+        <div class="card-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </div>
+        <div>
+          <h2>Credit Risk Report</h2>
+          <p>FICO-style score, risk band, and lending decision from the ensemble model.</p>
         </div>
       </div>
 
+      <div id="result-area">
+        <div class="empty-state">
+          <div class="es-graphic">
+            <div class="es-ring"></div>
+            <div class="es-bars">
+              <div class="es-bar" style="height:35%"></div>
+              <div class="es-bar" style="height:62%"></div>
+              <div class="es-bar" style="height:48%"></div>
+              <div class="es-bar" style="height:85%"></div>
+              <div class="es-bar" style="height:40%"></div>
+              <div class="es-bar" style="height:70%"></div>
+            </div>
+          </div>
+          <div class="es-title">Awaiting Applicant Data</div>
+          <div class="es-sub">Complete the form and click <strong>Score Applicant</strong> to run the model and generate a credit risk report.</div>
+        </div>
+      </div>
     </section>
 
-  </div><!-- /layout -->
+  </div>
 
-  <!-- ── Risk Band Reference ──────────────────────────────── -->
-  <section class="risk-table-section">
-    <h2>Risk Band Reference</h2>
-    <div class="risk-bands">
-      <div class="band" style="--band-color:#27ae60">
-        <div class="band-score">750 – 850</div>
-        <div class="band-label">Excellent</div>
-        <div class="band-rate">8 – 10%</div>
-        <div class="band-action">APPROVE</div>
+  <!-- RISK BANDS -->
+  <section class="card bands-card">
+    <div class="bands-head">
+      <div>
+        <h3>Risk Band Reference</h3>
+        <p>FICO-style 300–850 scoring scale &mdash; lending decisions and indicative interest rates</p>
       </div>
-      <div class="band" style="--band-color:#2ecc71">
-        <div class="band-score">700 – 749</div>
-        <div class="band-label">Good</div>
-        <div class="band-rate">11 – 14%</div>
-        <div class="band-action">APPROVE</div>
+    </div>
+    <div class="bands-grid">
+      <div class="band" style="--bc:#10b981">
+        <div class="b-range">750 &ndash; 850</div>
+        <div class="b-name">Excellent</div>
+        <div class="b-rate">8 &ndash; 10%</div>
+        <div class="b-dec b-approve">APPROVE</div>
       </div>
-      <div class="band" style="--band-color:#f39c12">
-        <div class="band-score">650 – 699</div>
-        <div class="band-label">Fair</div>
-        <div class="band-rate">15 – 19%</div>
-        <div class="band-action">APPROVE</div>
+      <div class="band" style="--bc:#34d399">
+        <div class="b-range">700 &ndash; 749</div>
+        <div class="b-name">Good</div>
+        <div class="b-rate">11 &ndash; 14%</div>
+        <div class="b-dec b-approve">APPROVE</div>
       </div>
-      <div class="band" style="--band-color:#e67e22">
-        <div class="band-score">600 – 649</div>
-        <div class="band-label">Poor</div>
-        <div class="band-rate">20 – 25%</div>
-        <div class="band-action">CONDITIONAL</div>
+      <div class="band" style="--bc:#f59e0b">
+        <div class="b-range">650 &ndash; 699</div>
+        <div class="b-name">Fair</div>
+        <div class="b-rate">15 &ndash; 19%</div>
+        <div class="b-dec b-approve">APPROVE</div>
       </div>
-      <div class="band" style="--band-color:#e74c3c">
-        <div class="band-score">550 – 599</div>
-        <div class="band-label">Very Poor</div>
-        <div class="band-rate">N/A</div>
-        <div class="band-action">DECLINE</div>
+      <div class="band" style="--bc:#f97316">
+        <div class="b-range">600 &ndash; 649</div>
+        <div class="b-name">Poor</div>
+        <div class="b-rate">20 &ndash; 25%</div>
+        <div class="b-dec b-cond">CONDITIONAL</div>
       </div>
-      <div class="band" style="--band-color:#8e44ad">
-        <div class="band-score">300 – 549</div>
-        <div class="band-label">High Risk</div>
-        <div class="band-rate">N/A</div>
-        <div class="band-action">DECLINE</div>
+      <div class="band" style="--bc:#ef4444">
+        <div class="b-range">550 &ndash; 599</div>
+        <div class="b-name">Very Poor</div>
+        <div class="b-rate">N/A</div>
+        <div class="b-dec b-decline">DECLINE</div>
+      </div>
+      <div class="band" style="--bc:#8b5cf6">
+        <div class="b-range">300 &ndash; 549</div>
+        <div class="b-name">High Risk</div>
+        <div class="b-rate">N/A</div>
+        <div class="b-dec b-decline">DECLINE</div>
       </div>
     </div>
   </section>
 
+  <!-- MODEL INFO -->
+  <div class="info-strip">
+    <div class="is-card"><span class="is-ico">⚙</span><strong>Models</strong><span>5&times; LGB + 5&times; XGB + Stacking</span></div>
+    <div class="is-card"><span class="is-ico">&#x21BB;</span><strong>Validation</strong><span>5-Fold Stratified OOF CV</span></div>
+    <div class="is-card"><span class="is-ico">&#x25B2;</span><strong>Tuning</strong><span>Optuna Bayesian TPE &middot; 50 trials</span></div>
+    <div class="is-card"><span class="is-ico">&#x25CA;</span><strong>Explainability</strong><span>SHAP &middot; KS Statistic &middot; Gini</span></div>
+    <div class="is-card"><span class="is-ico">&#x2605;</span><strong>Kaggle AUC</strong><span>0.78736 Public Leaderboard</span></div>
+    <div class="is-card"><span class="is-ico">&#x2696;</span><strong>Compliance</strong><span>Basel III &middot; GDPR aligned</span></div>
+  </div>
+
 </main>
 
-<!-- ── Footer ────────────────────────────────────────────── -->
 <footer>
-  <p>Intelligent Credit Risk Scoring System · Enterprise ML Pipeline · Home Credit Default Risk</p>
+  <div class="footer-inner">
+    <span>Intelligent Credit Risk Scoring System &middot; Enterprise ML Pipeline</span>
+    <span class="f-sep">&middot;</span>
+    <span>Home Credit Default Risk &middot; Kaggle AUC 0.78736</span>
+    <span class="f-sep">&middot;</span>
+    <a href="https://github.com/HASSANRAZA111/intelligent-Credit-Risk-Scoring-System" target="_blank">GitHub &nearr;</a>
+  </div>
 </footer>
 
-<!-- ── Script ────────────────────────────────────────────── -->
 <script>
-  // Health check on load
-  fetch("/health")
-    .then(r => r.json())
-    .then(d => {
-      const badge = document.getElementById("model-badge");
-      if (d.model === "loaded") {
-        badge.textContent = "✓ Model Loaded";
-        badge.className = "badge badge-ok";
-      } else {
-        badge.textContent = "✗ Model Not Loaded";
-        badge.className = "badge badge-error";
-      }
-    })
-    .catch(() => {
-      document.getElementById("model-badge").textContent = "✗ Unreachable";
-    });
-
-  function collectFeatures() {
-    // Check raw JSON first
-    const raw = document.getElementById("raw-json").value.trim();
-    if (raw) {
-      try { return JSON.parse(raw); }
-      catch(e) { alert("Invalid JSON in advanced field."); return null; }
+fetch("/health")
+  .then(r => r.json())
+  .then(d => {
+    const pill = document.getElementById("model-status");
+    const dot  = document.getElementById("sdot");
+    const lbl  = document.getElementById("s-text");
+    if (d.model === "loaded") {
+      pill.className = "status-pill s-ok";
+      dot.className  = "s-dot dot-ok";
+      lbl.textContent = "Model Ready";
+    } else {
+      pill.className = "status-pill s-err";
+      dot.className  = "s-dot dot-err";
+      lbl.textContent = "Model Offline";
     }
-    // Otherwise collect from form inputs
-    const fields = [
-      "AMT_CREDIT","AMT_INCOME_TOTAL","AMT_ANNUITY","AMT_GOODS_PRICE",
-      "EXT_SOURCE_1","EXT_SOURCE_2","EXT_SOURCE_3",
-      "DAYS_BIRTH","DAYS_EMPLOYED","DAYS_ID_PUBLISH",
-      "REGION_POPULATION_RELATIVE","OWN_CAR_AGE"
-    ];
-    const obj = {};
-    fields.forEach(f => {
-      const v = document.getElementById(f).value;
-      if (v !== "") obj[f] = parseFloat(v);
-    });
-    return obj;
+  })
+  .catch(() => {
+    document.getElementById("model-status").className = "status-pill s-err";
+    document.getElementById("s-text").textContent = "Unreachable";
+  });
+
+function collectFeatures() {
+  const raw = document.getElementById("raw-json").value.trim();
+  if (raw) {
+    try { return JSON.parse(raw); }
+    catch(e) { showError("Invalid JSON — check the Raw JSON field."); return null; }
   }
+  const fields = [
+    "AMT_CREDIT","AMT_INCOME_TOTAL","AMT_ANNUITY","AMT_GOODS_PRICE",
+    "EXT_SOURCE_1","EXT_SOURCE_2","EXT_SOURCE_3",
+    "DAYS_BIRTH","DAYS_EMPLOYED","DAYS_ID_PUBLISH",
+    "REGION_POPULATION_RELATIVE","OWN_CAR_AGE"
+  ];
+  const obj = {};
+  fields.forEach(f => {
+    const v = document.getElementById(f) ? document.getElementById(f).value : "";
+    if (v !== "") obj[f] = parseFloat(v);
+  });
+  return obj;
+}
 
-  function runPrediction() {
-    const features = collectFeatures();
-    if (!features) return;
+function runPrediction() {
+  const features = collectFeatures();
+  if (!features) return;
+  const btn  = document.getElementById("score-btn");
+  const txt  = document.getElementById("btn-text");
+  const spin = document.getElementById("btn-spin");
+  btn.disabled = true;
+  spin.classList.remove("hidden");
+  txt.textContent = "Scoring\u2026";
 
-    const btn     = document.getElementById("predict-btn");
-    const spinner = document.getElementById("btn-spinner");
-    const btnText = document.getElementById("btn-text");
-    btn.disabled    = true;
-    spinner.classList.remove("hidden");
-    btnText.textContent = "Scoring…";
+  fetch("/predict", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(features)
+  })
+  .then(r => r.json())
+  .then(data => {
+    btn.disabled = false;
+    spin.classList.add("hidden");
+    txt.textContent = "Score Applicant";
+    data.error ? showError(data.error) : renderReport(data.predictions[0]);
+  })
+  .catch(err => {
+    btn.disabled = false;
+    spin.classList.add("hidden");
+    txt.textContent = "Score Applicant";
+    showError("Network error: " + err.message);
+  });
+}
 
-    fetch("/predict", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify(features)
-    })
-    .then(r => r.json())
-    .then(data => {
-      btn.disabled = false;
-      spinner.classList.add("hidden");
-      btnText.textContent = "Score Applicant";
-      if (data.error) {
-        showError(data.error);
-      } else {
-        renderReport(data.predictions[0]);
-      }
-    })
-    .catch(err => {
-      btn.disabled = false;
-      spinner.classList.add("hidden");
-      btnText.textContent = "Score Applicant";
-      showError("Network error: " + err.message);
-    });
-  }
+function renderReport(r) {
+  const ok  = r.decision === "APPROVE";
+  const pct = (r.default_probability * 100).toFixed(2);
+  const norm = Math.max(0, Math.min(1, (r.credit_score - 300) / 550));
+  const angle = norm * 220 - 110;
+  const rad = angle * Math.PI / 180;
+  const cx = 64, cy = 60, R = 46;
+  const ex = cx + R * Math.sin(rad);
+  const ey = cy - R * Math.cos(rad);
+  const [sx, sy] = [cx + R * Math.sin(-110 * Math.PI / 180), cy - R * Math.cos(-110 * Math.PI / 180)];
+  const large = norm > 0.5 ? 1 : 0;
 
-  function renderReport(r) {
-    const decisionClass = r.decision === "APPROVE" ? "decision-approve" : "decision-reject";
-    const html = `
-      <div class="report">
-
-        <div class="report-top">
-          <div class="credit-score-circle" style="border-color:${r.band_color}">
-            <div class="score-number" style="color:${r.band_color}">${r.credit_score}</div>
-            <div class="score-label">Credit Score</div>
-          </div>
-          <div class="decision-block">
-            <div class="decision-tag ${decisionClass}">${r.decision}</div>
-            <div class="risk-band-tag" style="background:${r.band_color}">${r.risk_band}</div>
+  document.getElementById("result-area").innerHTML = `
+    <div class="report">
+      <div class="report-hero">
+        <div class="gauge-wrap">
+          <svg viewBox="0 0 128 80" class="gauge-svg">
+            <path d="M ${sx.toFixed(1)} ${sy.toFixed(1)} A ${R} ${R} 0 1 1 ${(cx+R*Math.sin(110*Math.PI/180)).toFixed(1)} ${(cy-R*Math.cos(110*Math.PI/180)).toFixed(1)}"
+              fill="none" stroke="#1e293b" stroke-width="7" stroke-linecap="round"/>
+            <path d="M ${sx.toFixed(1)} ${sy.toFixed(1)} A ${R} ${R} 0 ${large} 1 ${ex.toFixed(1)} ${ey.toFixed(1)}"
+              fill="none" stroke="${r.band_color}" stroke-width="7" stroke-linecap="round"/>
+          </svg>
+          <div class="gauge-val">
+            <div class="gauge-score" style="color:${r.band_color}">${r.credit_score}</div>
+            <div class="gauge-lbl">FICO Score</div>
           </div>
         </div>
-
-        <div class="report-grid">
-          <div class="metric">
-            <div class="metric-label">Default Probability</div>
-            <div class="metric-value">${(r.default_probability * 100).toFixed(2)}%</div>
-            <div class="metric-bar"><div class="metric-fill" style="width:${r.default_probability*100}%;background:${r.band_color}"></div></div>
+        <div class="verdict-col">
+          <div class="verdict-badge ${ok ? 'v-approve' : 'v-reject'}">
+            <span class="v-icon">${ok ? '&#10003;' : '&#10007;'}</span>
+            <span>${r.decision}</span>
           </div>
-          <div class="metric">
-            <div class="metric-label">Interest Rate</div>
-            <div class="metric-value">${r.interest_rate}</div>
-          </div>
-          <div class="metric">
-            <div class="metric-label">Recommendation</div>
-            <div class="metric-value rec">${r.recommendation}</div>
-          </div>
-          <div class="metric">
-            <div class="metric-label">High Risk Flag</div>
-            <div class="metric-value">${r.high_risk_flag ? "🚨 Yes" : "✅ No"}</div>
-          </div>
+          <div class="band-tag" style="color:${r.band_color};border-color:${r.band_color}40;background:${r.band_color}12">${r.risk_band}</div>
+          <div class="rec-line">${r.recommendation}</div>
         </div>
+      </div>
 
-      </div>`;
-    document.getElementById("result-content").innerHTML = html;
-  }
+      <div class="metrics-quartet">
+        <div class="mq-card">
+          <div class="mq-label">Default Probability</div>
+          <div class="mq-val" style="color:${r.band_color}">${pct}%</div>
+          <div class="mq-track"><div class="mq-fill" style="width:${Math.min(r.default_probability*350,100)}%;background:${r.band_color}"></div></div>
+        </div>
+        <div class="mq-card">
+          <div class="mq-label">Interest Rate</div>
+          <div class="mq-val">${r.interest_rate}</div>
+        </div>
+        <div class="mq-card">
+          <div class="mq-label">High Risk Flag</div>
+          <div class="mq-val ${r.high_risk_flag ? 'flag-yes' : 'flag-no'}">${r.high_risk_flag ? 'Flagged' : 'Clear'}</div>
+        </div>
+        <div class="mq-card">
+          <div class="mq-label">Score Band</div>
+          <div class="mq-val">300 &ndash; 850</div>
+        </div>
+      </div>
 
-  function showError(msg) {
-    document.getElementById("result-content").innerHTML =
-      `<div class="error-box">⚠️ ${msg}</div>`;
-  }
+      <div class="report-meta">
+        Scored by LightGBM ensemble &nbsp;&middot;&nbsp; ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}
+      </div>
+    </div>`;
+}
+
+function showError(msg) {
+  document.getElementById("result-area").innerHTML = `
+    <div class="err-box">
+      <div class="err-icon">!</div>
+      <div>
+        <div class="err-title">Scoring Failed</div>
+        <div class="err-msg">${msg}</div>
+      </div>
+    </div>`;
+}
 </script>
-
 </body>
 </html>

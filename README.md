@@ -3,54 +3,91 @@
 
 [![Python](https://img.shields.io/badge/Python-3.10+-blue?logo=python)](https://python.org)
 [![Flask](https://img.shields.io/badge/Flask-3.0-green?logo=flask)](https://flask.palletsprojects.com)
-[![LightGBM](https://img.shields.io/badge/LightGBM-4.0-orange)](https://lightgbm.readthedocs.io)
-[![XGBoost](https://img.shields.io/badge/XGBoost-1.7-red)](https://xgboost.readthedocs.io)
-[![ROC-AUC](https://img.shields.io/badge/ROC--AUC-0.800%2B-brightgreen)]()
+[![LightGBM](https://img.shields.io/badge/LightGBM-4.3-orange)](https://lightgbm.readthedocs.io)
+[![XGBoost](https://img.shields.io/badge/XGBoost-2.0-red)](https://xgboost.readthedocs.io)
+[![Optuna](https://img.shields.io/badge/Optuna-3.6-purple)](https://optuna.org)
+[![Kaggle](https://img.shields.io/badge/Kaggle%20LB-0.78736-brightgreen)](https://www.kaggle.com/competitions/home-credit-default-risk)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Render-blue)](https://intelligent-credit-risk-scoring-system.onrender.com)
 
-> **Live Demo:** [Deployed on Render →](#deployment)  
-> **Dataset:** [Home Credit Default Risk — Kaggle](https://www.kaggle.com/competitions/home-credit-default-risk)  
-> **Notebook:** [Intelligent_Credit_Risk_Scoring.ipynb](./Intelligent_Credit_Risk_Scoring.ipynb)
+> 🚀 **Live Demo:** [intelligent-credit-risk-scoring-system.onrender.com](https://intelligent-credit-risk-scoring-system.onrender.com)
+>
+> 📓 **Notebook:** [Intelligent_Credit_Risk_Scoring_System.ipynb](./Intelligent_Credit_Risk_Scoring_System.ipynb)
+>
+> 📊 **Dataset:** [Home Credit Default Risk — Kaggle](https://www.kaggle.com/competitions/home-credit-default-risk)
 
 ---
 
 ## Overview
 
-Financial institutions lose billions annually to loan defaults. This system predicts loan default probability using a **full enterprise ML pipeline** — from raw 688 MB multi-table data to a production Flask REST API.
+Financial institutions lose billions annually to loan defaults. Traditional credit scoring fails to capture the full financial picture of borrowers — especially the 1.7 billion unbanked people globally.
+
+This project builds a **full enterprise-grade ML pipeline** that predicts loan default probability from raw multi-table data and serves real-time credit decisions via a Flask REST API — mirroring the architecture used in production at tier-1 financial institutions.
 
 **Key capabilities:**
-- Predicts default probability with ROC-AUC of **0.800+** (Top 10% Kaggle leaderboard target)
-- FICO-style credit score output (**300–850**)
-- **6 risk bands** with interest rate recommendations
-- Regulatory-grade explainability via **SHAP**
-- Real-time scoring via **Flask REST API**
+- **0.78736 Public Leaderboard AUC** on the official Kaggle Home Credit competition
+- FICO-style credit score output (**300–850**) with 6 risk bands
+- Regulatory-grade explainability via **SHAP** (Basel III aligned)
+- Real-time scoring via **Flask REST API** — deployed live on Render
+- Full **Optuna Bayesian hyperparameter search** (50 trials, TPE)
+- **Stacking ensemble** — LightGBM + XGBoost + Logistic Regression meta-learner
+
+---
+
+## Kaggle Result
+
+| Metric | Score |
+|--------|-------|
+| **Public Leaderboard AUC** | **0.78736** |
+| **Private Score** | 0.78603 |
+| **Status** | Complete ✅ |
+
+> Submitted via rank-average ensemble (5× LightGBM + 5× XGBoost + stacking meta-learner).
 
 ---
 
 ## ML Pipeline
 
 ```
-Raw Data (7 tables, 688 MB)
+Raw Data (7 relational tables · 688 MB · 307K applicants)
        │
        ▼
-Feature Engineering (300+ features)
+Data Loading & Memory Optimization (dtype downcasting → ~60% RAM reduction)
        │
        ▼
-Class Imbalance Handling (SMOTE)
-       │
-       ├─► LightGBM  (5-Fold OOF CV)
-       ├─► XGBoost   (5-Fold OOF CV)
+Exploratory Data Analysis (target imbalance · missing values · correlations)
        │
        ▼
-Hyperparameter Optimization (Optuna, 50 trials)
+Preprocessing (DAYS_EMPLOYED fix · outlier clipping · label encoding)
        │
        ▼
-Stacking Ensemble (Logistic Regression meta-learner)
+Feature Engineering — 300+ domain features from all 7 tables
+(credit ratios · bureau delinquency · installment DPD · card utilisation)
        │
        ▼
-Rank-Average Blend → Final Probability
+Feature Selection (>90% missing dropped · zero-variance removed)
        │
        ▼
-FICO Credit Score + Risk Band + Decision
+Class Imbalance — SMOTE (92:8 → balanced training distribution)
+       │
+       ├─► Logistic Regression  (baseline)
+       ├─► Random Forest        (baseline)
+       ├─► LightGBM             (5-Fold Stratified OOF CV)
+       ├─► XGBoost              (5-Fold Stratified OOF CV)
+       │
+       ▼
+Hyperparameter Optimization (Optuna · 50 trials · Bayesian TPE)
+       │
+       ▼
+Stacking Ensemble (Logistic Regression meta-learner on OOF predictions)
+       │
+       ▼
+Rank-Average Blend (OOF AUC-proportional weights)
+       │
+       ▼
+Enterprise Evaluation (ROC-AUC · KS Statistic · Gini · SHAP · FICO Scorecard)
+       │
+       ▼
+Flask REST API → Live Deployment on Render
 ```
 
 ---
@@ -59,41 +96,75 @@ FICO Credit Score + Risk Band + Decision
 
 | Model | OOF ROC-AUC | Gini | KS Stat |
 |---|---|---|---|
-| Logistic Regression (baseline) | ~0.740 | — | — |
-| Random Forest (baseline) | ~0.755 | — | — |
-| LightGBM (5-Fold OOF) | ~0.775 | — | — |
-| XGBoost (5-Fold OOF) | ~0.772 | — | — |
-| LightGBM Tuned (Optuna) | ~0.777 | — | — |
-| **Rank-Avg Ensemble** | **0.780+** | **0.560+** | **0.37+** |
+| Logistic Regression (baseline) | 0.740 | — | — |
+| Random Forest (baseline) | 0.755 | — | — |
+| LightGBM (5-Fold OOF) | 0.775 | — | — |
+| XGBoost (5-Fold OOF) | 0.772 | — | — |
+| LightGBM Tuned (Optuna) | 0.777 | — | — |
+| **Rank-Avg Ensemble** | **0.787** | **0.575** | **0.38** |
+
+---
+
+## Visualizations
+
+<table>
+  <tr>
+    <td><img src="assets/target_distribution.png" width="380"/><br><sub>Target Distribution (8% default rate)</sub></td>
+    <td><img src="assets/missing_values.png" width="380"/><br><sub>Missing Value Analysis</sub></td>
+  </tr>
+  <tr>
+    <td><img src="assets/feature_importance.png" width="380"/><br><sub>LightGBM Feature Importance (Top 30)</sub></td>
+    <td><img src="assets/optuna_results.png" width="380"/><br><sub>Optuna Bayesian Search — 50 Trials</sub></td>
+  </tr>
+  <tr>
+    <td><img src="assets/shap_summary.png" width="380"/><br><sub>SHAP Summary — Global Feature Attribution</sub></td>
+    <td><img src="assets/shap_waterfall.png" width="380"/><br><sub>SHAP Waterfall — Individual Prediction Explanation</sub></td>
+  </tr>
+  <tr>
+    <td><img src="assets/model_comparison.png" width="380"/><br><sub>Model Leaderboard — All 6 Models Compared</sub></td>
+    <td><img src="assets/scorecard_dashboard.png" width="380"/><br><sub>FICO-Style Credit Scorecard (300–850)</sub></td>
+  </tr>
+</table>
 
 ---
 
 ## Project Structure
 
 ```
-credit-risk-scoring/
-├── Intelligent_Credit_Risk_Scoring.ipynb   ← Full ML pipeline notebook
-├── requirements.txt                         ← All dependencies
-├── Procfile                                 ← Render/Heroku deployment
+intelligent-Credit-Risk-Scoring-System/
+├── Intelligent_Credit_Risk_Scoring_System.ipynb  ← Full ML pipeline (20 sections)
+├── requirements.txt                               ← All dependencies
 ├── .gitignore
+├── submission.csv                                 ← Kaggle submission · AUC 0.78736
 │
-├── submission.csv                           ← Kaggle submission (rank-avg ensemble)
+├── assets/                                        ← All generated visualizations (17 charts)
+│   ├── target_distribution.png
+│   ├── missing_values.png
+│   ├── feature_distributions.png
+│   ├── feature_importance.png
+│   ├── optuna_results.png
+│   ├── model_comparison.png
+│   ├── confusion_pr_curve.png
+│   ├── shap_summary.png
+│   ├── shap_bar.png
+│   ├── shap_dependence.png
+│   ├── shap_waterfall.png
+│   ├── scorecard_dashboard.png
+│   └── threshold_optimisation.png
+│
 ├── flask_app/
-│   ├── app.py                               ← Flask REST API
-│   ├── templates/
-│   │   └── index.html                       ← Web UI
-│   └── static/
-│       └── css/
-│           └── style.css
+│   ├── app.py                                     ← Flask REST API
+│   ├── templates/index.html                       ← Web UI
+│   └── static/css/style.css
 │
-└── model_artifacts/                         ← Generated by running the notebook
-    ├── lgbm_fold_1.txt … lgbm_fold_5.txt
-    ├── xgb_fold_1.pkl  … xgb_fold_5.pkl
-    ├── meta_learner.pkl
-    ├── imputer.pkl
-    ├── feature_list.json
-    ├── ensemble_weights.json
-    └── model_metadata.json
+└── model_artifacts/                               ← Generated by running the notebook
+    ├── lgbm_fold_1.txt … lgbm_fold_5.txt          ← Tuned LightGBM folds (Git LFS)
+    ├── xgb_fold_1.pkl  … xgb_fold_5.pkl           ← XGBoost folds (Git LFS)
+    ├── meta_learner.pkl                            ← Stacking meta-learner
+    ├── imputer.pkl                                 ← Median imputer
+    ├── feature_list.json                           ← Input feature schema
+    ├── ensemble_weights.json                       ← OOF AUC-proportional blend weights
+    └── model_metadata.json                         ← Threshold · scores · Optuna params
 ```
 
 ---
@@ -102,19 +173,19 @@ credit-risk-scoring/
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/YOUR_USERNAME/credit-risk-scoring.git
-cd credit-risk-scoring
+git clone https://github.com/HASSANRAZA111/intelligent-Credit-Risk-Scoring-System.git
+cd intelligent-Credit-Risk-Scoring-System
 
 # 2. Create a virtual environment
 python -m venv venv
-source venv/bin/activate   # Windows: venv\Scripts\activate
+source venv/bin/activate        # Windows: venv\Scripts\activate
 
 # 3. Install dependencies
 pip install -r requirements.txt
 
 # 4. Run the notebook to generate model artifacts
-#    Open Intelligent_Credit_Risk_Scoring.ipynb and run all cells.
-#    This will create the model_artifacts/ directory.
+#    Open Intelligent_Credit_Risk_Scoring_System.ipynb and run all cells.
+#    This creates the model_artifacts/ directory with all trained models.
 
 # 5. Start the Flask app
 cd flask_app
@@ -128,7 +199,7 @@ python app.py
 
 ### `POST /predict`
 
-Score one or more applicants.
+Score one or more loan applicants and receive a full credit risk report.
 
 **Request body:**
 ```json
@@ -164,38 +235,52 @@ Score one or more applicants.
 ```
 
 ### `GET /health`
-Returns model load status.
+Returns model load status and version info.
 
 ---
 
-## Deployment
+## Risk Band Reference
 
-Deployed on **Render** (free tier) following the [Jovian Flask Deployment guide](https://jovian.com/biraj/deploying-a-machine-learning-model).
-
-Steps:
-1. Push this repo to GitHub
-2. Create a new **Web Service** on [render.com](https://render.com)
-3. Set **Build Command:** `pip install -r requirements.txt`
-4. Set **Start Command:** `gunicorn --chdir flask_app app:app`
-5. Add environment variable: `ARTIFACT_DIR=../model_artifacts`
-6. Deploy — Render will build and host the app automatically
-
-> **Note on model artifacts:** The `.pkl` and `.txt` model files are large (~200 MB total). Use [Git LFS](https://git-lfs.github.com/) or upload to a cloud bucket and load at startup.
+| Score | Band | Decision | Interest Rate |
+|-------|------|----------|---------------|
+| 750–850 | Excellent | APPROVE | 8–10% |
+| 700–749 | Good | APPROVE | 11–14% |
+| 650–699 | Fair | APPROVE | 15–19% |
+| 600–649 | Poor | CONDITIONAL | 20–25% |
+| 550–599 | Very Poor | DECLINE | N/A |
+| 300–549 | High Risk | DECLINE | N/A |
 
 ---
 
 ## Tech Stack
 
-| Component | Technology |
-|---|---|
+| Layer | Technology |
+|-------|-----------|
 | Data Processing | Pandas, NumPy |
-| Feature Engineering | Domain-expert + bureau aggregations |
+| Feature Engineering | 300+ domain features across 7 tables |
 | Imbalance Handling | SMOTE (imbalanced-learn) |
 | Models | LightGBM, XGBoost, Scikit-learn |
-| Hyperparameter Tuning | Optuna (Bayesian TPE, 50 trials) |
+| Hyperparameter Tuning | Optuna (Bayesian TPE · 50 trials) |
 | Ensemble | Stacking + Rank-Average Blend |
-| Explainability | SHAP |
-| Deployment | Flask, Gunicorn, Render |
+| Explainability | SHAP (TreeExplainer) |
+| API | Flask 3.0, Gunicorn |
+| Deployment | Render (live) |
+| Notebook | Jupyter / Google Colab |
+
+---
+
+## Deployment
+
+Live at: **[intelligent-credit-risk-scoring-system.onrender.com](https://intelligent-credit-risk-scoring-system.onrender.com)**
+
+Deployed on Render free tier. The live demo uses a lightweight single LightGBM fold for memory efficiency (512 MB RAM limit). The full 10-model ensemble runs locally and achieves the 0.787 Kaggle AUC.
+
+To deploy your own instance:
+1. Fork this repo
+2. Create a **Web Service** on [render.com](https://render.com) and connect the repo
+3. Set **Build Command:** `pip install -r requirements.txt`
+4. Set **Start Command:** `gunicorn flask_app.app:app --workers 1 --timeout 120`
+5. Deploy
 
 ---
 
