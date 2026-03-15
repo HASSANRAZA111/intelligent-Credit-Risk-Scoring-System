@@ -271,32 +271,16 @@ python app.py
 
 ### Sample Inputs to Test
 
-**Low Risk Applicant (expect APPROVE ~750–820):**
+Paste these into the **Raw JSON payload (advanced)** field in the web UI. Leave all form fields empty.
+
+**Sample 1 — APPROVE · Excellent · Score 836 · Default probability 2.60%**
 ```json
-{
-  "AMT_CREDIT": 250000,
-  "AMT_INCOME_TOTAL": 200000,
-  "AMT_ANNUITY": 15000,
-  "EXT_SOURCE_1": 0.83,
-  "EXT_SOURCE_2": 0.78,
-  "EXT_SOURCE_3": 0.72,
-  "DAYS_BIRTH": -14600,
-  "DAYS_EMPLOYED": -2500
-}
+{"EXT_SOURCE_1": 0.83, "EXT_SOURCE_2": 0.80, "EXT_SOURCE_3": 0.76, "AMT_CREDIT": 250000, "AMT_INCOME_TOTAL": 200000, "AMT_ANNUITY": 15000, "AMT_GOODS_PRICE": 220000, "DAYS_BIRTH": -14600, "DAYS_EMPLOYED": -2500, "DAYS_ID_PUBLISH": -1200, "OWN_CAR_AGE": 4, "CREDIT_INCOME_RATIO": 1.25, "ANNUITY_INCOME_RATIO": 0.075, "CREDIT_ANNUITY_RATIO": 16.67, "CREDIT_GOODS_RATIO": 1.14, "GOODS_INCOME_RATIO": 1.10, "CREDIT_GOODS_DIFF": 30000, "EMPLOYED_TO_AGE_RATIO": 0.171, "ID_TO_AGE_RATIO": 0.082, "EXT_SOURCES_MEAN": 0.797, "EXT_SOURCES_MIN": 0.76, "EXT_SOURCES_MAX": 0.83, "EXT_SOURCES_PROD": 0.505, "EXT_SOURCES_WEIGHTED": 0.789, "EXT_SOURCE_1_2_RATIO": 1.037, "EXT_SOURCE_2_3_RATIO": 1.053}
 ```
 
-**High Risk Applicant (expect DECLINE ~380–480):**
+**Sample 2 — REJECT · High Risk · Score 502 · Default probability 63.30%**
 ```json
-{
-  "AMT_CREDIT": 800000,
-  "AMT_INCOME_TOTAL": 90000,
-  "AMT_ANNUITY": 45000,
-  "EXT_SOURCE_1": 0.18,
-  "EXT_SOURCE_2": 0.15,
-  "EXT_SOURCE_3": 0.12,
-  "DAYS_BIRTH": -9125,
-  "DAYS_EMPLOYED": -180
-}
+{"EXT_SOURCE_1": 0.18, "EXT_SOURCE_2": 0.15, "EXT_SOURCE_3": 0.12, "AMT_CREDIT": 800000, "AMT_INCOME_TOTAL": 90000, "AMT_ANNUITY": 45000, "AMT_GOODS_PRICE": 750000, "DAYS_BIRTH": -9125, "DAYS_EMPLOYED": -180, "DAYS_ID_PUBLISH": -500, "OWN_CAR_AGE": 15, "CREDIT_INCOME_RATIO": 8.89, "ANNUITY_INCOME_RATIO": 0.50, "CREDIT_ANNUITY_RATIO": 17.78, "CREDIT_GOODS_RATIO": 1.07, "GOODS_INCOME_RATIO": 8.33, "CREDIT_GOODS_DIFF": 50000, "EMPLOYED_TO_AGE_RATIO": 0.020, "ID_TO_AGE_RATIO": 0.055, "EXT_SOURCES_MEAN": 0.15, "EXT_SOURCES_MIN": 0.12, "EXT_SOURCES_MAX": 0.18, "EXT_SOURCES_PROD": 0.003, "EXT_SOURCES_WEIGHTED": 0.143, "EXT_SOURCE_1_2_RATIO": 1.20, "EXT_SOURCE_2_3_RATIO": 1.25}
 ```
 
 ---
@@ -305,18 +289,39 @@ python app.py
 
 ### `POST /predict`
 
-**Request body:**
+**Request body (all supported fields):**
 ```json
 {
-  "AMT_CREDIT": 500000,
-  "AMT_INCOME_TOTAL": 150000,
-  "AMT_ANNUITY": 25000,
-  "EXT_SOURCE_2": 0.65,
-  "EXT_SOURCE_3": 0.55,
-  "DAYS_BIRTH": -12000,
-  "DAYS_EMPLOYED": -3000
+  "AMT_CREDIT": 250000,
+  "AMT_INCOME_TOTAL": 200000,
+  "AMT_ANNUITY": 15000,
+  "AMT_GOODS_PRICE": 220000,
+  "EXT_SOURCE_1": 0.83,
+  "EXT_SOURCE_2": 0.80,
+  "EXT_SOURCE_3": 0.76,
+  "DAYS_BIRTH": -14600,
+  "DAYS_EMPLOYED": -2500,
+  "DAYS_ID_PUBLISH": -1200,
+  "OWN_CAR_AGE": 4,
+  "CREDIT_INCOME_RATIO": 1.25,
+  "ANNUITY_INCOME_RATIO": 0.075,
+  "CREDIT_ANNUITY_RATIO": 16.67,
+  "CREDIT_GOODS_RATIO": 1.14,
+  "GOODS_INCOME_RATIO": 1.10,
+  "CREDIT_GOODS_DIFF": 30000,
+  "EMPLOYED_TO_AGE_RATIO": 0.171,
+  "ID_TO_AGE_RATIO": 0.082,
+  "EXT_SOURCES_MEAN": 0.797,
+  "EXT_SOURCES_MIN": 0.76,
+  "EXT_SOURCES_MAX": 0.83,
+  "EXT_SOURCES_PROD": 0.505,
+  "EXT_SOURCES_WEIGHTED": 0.789,
+  "EXT_SOURCE_1_2_RATIO": 1.037,
+  "EXT_SOURCE_2_3_RATIO": 1.053
 }
 ```
+
+> Missing fields are handled natively by the LightGBM model. The more fields provided, the more accurate the prediction.
 
 **Response:**
 ```json
@@ -326,12 +331,12 @@ python app.py
   "predictions": [
     {
       "applicant_index": 0,
-      "default_probability": 0.0842,
-      "credit_score": 727,
-      "risk_band": "Good",
+      "default_probability": 0.0260,
+      "credit_score": 836,
+      "risk_band": "Excellent",
       "decision": "APPROVE",
-      "interest_rate": "11–14%",
-      "recommendation": "APPROVE — Standard Rate",
+      "interest_rate": "8-10%",
+      "recommendation": "APPROVE — Prime Rate",
       "high_risk_flag": 0
     }
   ]
