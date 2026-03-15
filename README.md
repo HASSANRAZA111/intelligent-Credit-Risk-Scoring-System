@@ -8,7 +8,7 @@
 [![Optuna](https://img.shields.io/badge/Optuna-3.6-purple)](https://optuna.org)
 [![Kaggle](https://img.shields.io/badge/Kaggle%20LB-0.78736%20%7C%20Top%2015%25-brightgreen)](https://www.kaggle.com/competitions/home-credit-default-risk)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-Render-blue)](https://intelligent-credit-risk-scoring-system.onrender.com)
-[![Author](https://img.shields.io/badge/Author-Hassan%20Raza-blueviolet)](https://github.com/HASSANRAZA111)
+[![Author](https://img.shields.io/badge/Developed%20by-Hassan%20Raza-blueviolet)](https://github.com/HASSANRAZA111)
 
 > 🚀 **Live Demo:** [intelligent-credit-risk-scoring-system.onrender.com](https://intelligent-credit-risk-scoring-system.onrender.com)
 >
@@ -33,6 +33,32 @@ This project builds a **full enterprise-grade ML pipeline** that predicts loan d
 - Real-time scoring via **Flask REST API** — deployed live on Render
 - Full **Optuna Bayesian hyperparameter search** (50 trials, TPE)
 - **Stacking ensemble** — LightGBM + XGBoost + Logistic Regression meta-learner
+
+---
+
+## Live Demo & Screenshots
+
+> **[intelligent-credit-risk-scoring-system.onrender.com](https://intelligent-credit-risk-scoring-system.onrender.com)**
+
+### Application Dashboard — Header & Pipeline
+
+![Demo Header](assets/demo_header.png)
+
+### APPROVE Decision — Low Risk Applicant
+
+> Excellent credit profile · EXT scores 0.76–0.83 · Score 836 · Default probability 2.60%
+
+![Demo Approve](assets/demo_approve.png)
+
+### DECLINE Decision — High Risk Applicant
+
+> High risk profile · EXT scores 0.12–0.18 · Score 502 · Default probability 63.30%
+
+![Demo Decline](assets/demo_decline.png)
+
+### Risk Band Reference & Model Info
+
+![Demo Footer](assets/demo_footer.png)
 
 ---
 
@@ -179,7 +205,7 @@ intelligent-Credit-Risk-Scoring-System/
 ├── .gitignore
 ├── submission.csv                                 ← Kaggle submission · AUC 0.78736 · Top 15%
 │
-├── assets/                                        ← All 17 generated visualizations
+├── assets/                                        ← All 17 generated visualizations + demo screenshots
 │   ├── target_distribution.png
 │   ├── missing_values.png
 │   ├── feature_distributions.png
@@ -196,7 +222,11 @@ intelligent-Credit-Risk-Scoring-System/
 │   ├── shap_bar.png
 │   ├── shap_dependence.png
 │   ├── shap_waterfall.png
-│   └── scorecard_dashboard.png
+│   ├── scorecard_dashboard.png
+│   ├── demo_approve.png                           ← App screenshot — APPROVE decision
+│   ├── demo_decline.png                           ← App screenshot — DECLINE decision
+│   ├── demo_header.png                            ← App screenshot — dashboard header
+│   └── demo_footer.png                            ← App screenshot — risk bands & model info
 │
 ├── flask_app/
 │   ├── app.py                                     ← Flask REST API
@@ -224,7 +254,7 @@ cd intelligent-Credit-Risk-Scoring-System
 
 # 2. Create a virtual environment
 python -m venv venv
-source venv/bin/activate        # Windows: venv\Scripts\activate
+source venv/bin/activate        # Windows: source venv/Scripts/activate
 
 # 3. Install dependencies
 pip install -r requirements.txt
@@ -239,13 +269,41 @@ python app.py
 # → Open http://localhost:5000
 ```
 
+### Sample Inputs to Test
+
+**Low Risk Applicant (expect APPROVE ~750–820):**
+```json
+{
+  "AMT_CREDIT": 250000,
+  "AMT_INCOME_TOTAL": 200000,
+  "AMT_ANNUITY": 15000,
+  "EXT_SOURCE_1": 0.83,
+  "EXT_SOURCE_2": 0.78,
+  "EXT_SOURCE_3": 0.72,
+  "DAYS_BIRTH": -14600,
+  "DAYS_EMPLOYED": -2500
+}
+```
+
+**High Risk Applicant (expect DECLINE ~380–480):**
+```json
+{
+  "AMT_CREDIT": 800000,
+  "AMT_INCOME_TOTAL": 90000,
+  "AMT_ANNUITY": 45000,
+  "EXT_SOURCE_1": 0.18,
+  "EXT_SOURCE_2": 0.15,
+  "EXT_SOURCE_3": 0.12,
+  "DAYS_BIRTH": -9125,
+  "DAYS_EMPLOYED": -180
+}
+```
+
 ---
 
 ## API Reference
 
 ### `POST /predict`
-
-Score one or more loan applicants and receive a full credit risk report.
 
 **Request body:**
 ```json
