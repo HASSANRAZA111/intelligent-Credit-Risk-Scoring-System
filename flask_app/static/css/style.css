@@ -90,27 +90,29 @@ header {
 .auc-pill {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 7px 14px;
+  gap: 7px;
+  padding: 5px 12px;
   background: rgba(16,185,129,0.08);
   border: 1px solid rgba(16,185,129,0.28);
-  border-radius: 12px;
+  border-radius: 10px;
 }
-.crown { font-size: 16px; line-height: 1; }
-.auc-inner { display: flex; flex-direction: column; gap: 2px; }
-.auc-top-row { display: flex; align-items: center; gap: 6px; }
-.auc-label { font-size: 0.68rem; color: var(--t2); font-weight: 500; }
+.crown { font-size: 14px; line-height: 1; flex-shrink: 0; }
+.auc-inner { display: flex; flex-direction: column; gap: 1px; }
+.auc-top-row { display: flex; align-items: center; gap: 5px; line-height: 1; }
+.auc-label { font-size: 0.65rem; color: var(--t2); font-weight: 500; }
 .auc-val {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.88rem;
+  font-size: 0.82rem;
   font-weight: 700;
   color: var(--ok);
+  line-height: 1;
 }
 .auc-sub {
-  font-size: 0.6rem;
-  color: rgba(16,185,129,0.7);
+  font-size: 0.58rem;
+  color: rgba(16,185,129,0.65);
   font-weight: 500;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
+  line-height: 1;
 }
 
 .status-pill {
@@ -188,6 +190,7 @@ main {
 .pipeline-row {
   display: flex;
   align-items: center;
+  justify-content: center;
   flex-wrap: wrap;
   gap: 4px;
   padding: 10px 14px;
@@ -581,17 +584,27 @@ main {
   margin-bottom: 1.5rem;
 }
 .is-card {
-  background: var(--s1);
-  border: 1px solid var(--line);
+  background: var(--s2);
+  border: 1px solid var(--line2);
   border-radius: var(--r);
-  padding: 10px 10px 10px 12px;
+  padding: 12px 12px 12px 14px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 5px;
 }
-.is-ico  { font-size: 15px; line-height: 1; }
-.is-card strong { font-size: 0.68rem; color: var(--t2); font-weight: 600; display: block; }
-.is-card span   { font-size: 0.65rem; color: var(--t3); line-height: 1.4; }
+.is-ico  { font-size: 16px; line-height: 1; }
+.is-card strong {
+  font-size: 0.78rem;
+  color: var(--text);
+  font-weight: 700;
+  display: block;
+  letter-spacing: -0.01em;
+}
+.is-card span {
+  font-size: 0.7rem;
+  color: var(--t2);
+  line-height: 1.4;
+}
 
 /* ── FOOTER ──────────────────────────────────────────────── */
 footer {
