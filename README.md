@@ -22,9 +22,9 @@
 
 ## Overview
 
-Financial institutions lose billions annually to loan defaults. Traditional credit scoring fails to capture the full financial picture of borrowers — especially the 1.7 billion unbanked people globally.
+Financial institutions lose billions annually to loan defaults. Traditional credit scoring fails to capture the full financial picture of borrowers especially the 1.7 billion unbanked people globally.
 
-This project builds a **full enterprise-grade ML pipeline** that predicts loan default probability from raw multi-table data and serves real-time credit decisions via a Flask REST API — mirroring the architecture used in production at tier-1 financial institutions.
+This project builds a **full enterprise-grade ML pipeline** that predicts loan default probability from raw multi-table data and serves real-time credit decisions via a Flask REST API mirroring the architecture used in production at tier-1 financial institutions.
 
 **Key capabilities:**
 - 👑 **0.78736 Public Leaderboard AUC** — Top 15% on the official Kaggle Home Credit competition
@@ -380,21 +380,21 @@ Returns model load status and version info.
 | API | Flask 3.0, Gunicorn |
 | Deployment | Render (live) |
 | Notebook | Jupyter / Google Colab |
-
 ---
+
 
 ## Deployment
 
 Live at: **[intelligent-credit-risk-scoring-system.onrender.com](https://intelligent-credit-risk-scoring-system.onrender.com)**
 
-Deployed on Render free tier. The live demo uses a lightweight single LightGBM fold for memory efficiency (512 MB RAM limit). The full 10-model ensemble runs locally and achieves the 0.787 Kaggle AUC.
+Deployed on Render free tier (512 MB RAM). The live demo runs a **5-fold LightGBM ensemble** no sklearn dependency at inference, NaN handled natively by the model. The full 10-model ensemble (5× LightGBM + 5× XGBoost + Stacking meta-learner) runs locally and achieves the 0.787 Kaggle AUC.
 
 To deploy your own instance:
 1. Fork this repo
 2. Create a **Web Service** on [render.com](https://render.com) and connect the repo
 3. Set **Build Command:** `pip install -r requirements.txt`
-4. Set **Start Command:** `gunicorn flask_app.app:app --workers 1 --timeout 120`
-5. Deploy
+4. Set **Start Command:** `gunicorn flask_app.app:app --workers 2`
+5. Deploy — Render will build and host the app automatically
 
 ---
 
